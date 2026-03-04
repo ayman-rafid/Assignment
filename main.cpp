@@ -155,7 +155,7 @@ char readChoiceChar(const std::string& prompt) {
 
 DataSource readDataSource() {
     while (true) {
-        const char choice = readChoiceChar("Choose data source - interactive (I) or file (F): ");
+        const char choice = readChoiceChar("Choose next mode - interactive (I) or file (F): ");
         if (choice == 'I') {
             return DataSource::Interactive;
         }
@@ -230,6 +230,25 @@ Person createRandomPerson(std::mt19937& rng) {
     std::cout << "\nGenerated exam: " << exam << '\n';
 
     return Person(name, surname, homework, exam);
+}
+
+std::vector<Person> collectStudentsInteractive() {
+    const InputMode inputMode = readInputMode();
+    const int studentCount = readPositiveInt("How many students will you enter? ");
+    std::vector<Person> students(studentCount);
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    for (int i = 0; i < studentCount; ++i) {
+        std::cout << "\nEntering student " << (i + 1) << ":\n";
+        if (inputMode == InputMode::Manual) {
+            std::cin >> students[i];
+        } else {
+            students[i] = createRandomPerson(rng);
+        }
+    }
+
+    return students;
 }
 
 std::vector<Person> loadStudentsFromFile(const std::string& fileName) {
@@ -368,12 +387,24 @@ void printAvgMedTable(const std::vector<Person>& students) {
 }
 
 int main() {
+    std::cout << "Initial setup: interactive data entry is required for every run.\n";
+    const std::string userTag = readUserTag();
+    std::vector<Person> generatedStudents = collectStudentsInteractive();
+    const std::string fileName = buildRunFileName(userTag);
+
+    if (!saveStudentsToFile(fileName, generatedStudents)) {
+        std::cout << "Could not create file: " << fileName << '\n';
+        return 1;
+    }
+
+    std::cout << "\nGenerated file: " << fileName << '\n';
+
     const DataSource source = readDataSource();
 
     if (source == DataSource::File) {
-        std::vector<Person> students = loadStudentsFromFile("Students.txt");
+        std::vector<Person> students = loadStudentsFromFile(fileName);
         if (students.empty()) {
-            std::cout << "No valid student records were loaded from Students.txt.\n";
+            std::cout << "No valid student records were loaded from " << fileName << ".\n";
             return 1;
         }
 
@@ -384,22 +415,10 @@ int main() {
     }
 
     const CalculationMethod method = readMethodChoice();
-    const InputMode inputMode = readInputMode();
-    const int studentCount = readPositiveInt("How many students will you enter? ");
-    std::vector<Person> students(studentCount);
-    std::random_device rd;
-    std::mt19937 rng(rd());
-
-    for (int i = 0; i < studentCount; ++i) {
-        std::cout << "\nEntering student " << (i + 1) << ":\n";
-        if (inputMode == InputMode::Manual) {
-            std::cin >> students[i];
-        } else {
-            students[i] = createRandomPerson(rng);
-        }
-        students[i].calculateFinalGrade(method);
+    for (Person& student : generatedStudents) {
+        student.calculateFinalGrade(method);
     }
 
-    printSingleMethodTable(students, method);
+    printSingleMethodTable(generatedStudents, method);
     return 0;
 }
