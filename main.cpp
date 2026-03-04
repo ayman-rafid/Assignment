@@ -1,16 +1,18 @@
-#include <array>
+#include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <string>
 #include <vector>
 
+enum class CalculationMethod { Average, Median };
+
 class Person {
 public:
-    Person()
-        : firstName_(), surname_(), homework_{0, 0, 0, 0, 0}, examResult_(0), finalGrade_(0.0) {}
+    Person() : firstName_(), surname_(), homework_(), examResult_(0), finalGrade_(0.0) {}
 
-    Person(const std::string& firstName, const std::string& surname, const std::array<int, 5>& homework, int examResult)
+    Person(const std::string& firstName, const std::string& surname, const std::vector<int>& homework, int examResult)
         : firstName_(firstName), surname_(surname), homework_(homework), examResult_(examResult), finalGrade_(0.0) {}
 
     Person(const Person& other)
@@ -33,13 +35,9 @@ public:
 
     ~Person() = default;
 
-    void calculateFinalAverage() {
-        double sum = 0.0;
-        for (int score : homework_) {
-            sum += score;
-        }
-        const double average = sum / homework_.size();
-        finalGrade_ = 0.4 * average + 0.6 * examResult_;
+    void calculateFinalGrade(CalculationMethod method) {
+        const double homeworkComponent = (method == CalculationMethod::Average) ? homeworkAverage() : homeworkMedian();
+        finalGrade_ = 0.4 * homeworkComponent + 0.6 * examResult_;
     }
 
     const std::string& firstName() const { return firstName_; }
@@ -50,18 +48,69 @@ public:
     friend std::ostream& operator<<(std::ostream& out, const Person& person);
 
 private:
+    double homeworkAverage() const {
+        if (homework_.empty()) {
+            return 0.0;
+        }
+        double sum = 0.0;
+        for (int score : homework_) {
+            sum += score;
+        }
+        return sum / homework_.size();
+    }
+
+    double homeworkMedian() const {
+        if (homework_.empty()) {
+            return 0.0;
+        }
+
+        std::vector<int> sortedHomework = homework_;
+        std::sort(sortedHomework.begin(), sortedHomework.end());
+        const std::size_t middle = sortedHomework.size() / 2;
+
+        if (sortedHomework.size() % 2 == 0) {
+            return (sortedHomework[middle - 1] + sortedHomework[middle]) / 2.0;
+        }
+        return static_cast<double>(sortedHomework[middle]);
+    }
+
     std::string firstName_;
     std::string surname_;
-    std::array<int, 5> homework_;
+    std::vector<int> homework_;
     int examResult_;
     double finalGrade_;
 };
 
 std::istream& operator>>(std::istream& in, Person& person) {
+    person.homework_.clear();
+
+    std::cout << "Name and surname: ";
     in >> person.firstName_ >> person.surname_;
-    for (std::size_t i = 0; i < person.homework_.size(); ++i) {
-        in >> person.homework_[i];
+
+    std::cout << "Enter homework scores (1-10). Type -1 to finish.\n";
+    while (true) {
+        int score = 0;
+        std::cout << "HW: ";
+        in >> score;
+
+        if (!in) {
+            return in;
+        }
+        if (score == -1) {
+            if (person.homework_.empty()) {
+                std::cout << "At least one homework score is required.\n";
+                continue;
+            }
+            break;
+        }
+        if (score < 1 || score > 10) {
+            std::cout << "Score must be between 1 and 10.\n";
+            continue;
+        }
+        person.homework_.push_back(score);
     }
+
+    std::cout << "Exam score (1-10): ";
     in >> person.examResult_;
     return in;
 }
@@ -85,20 +134,42 @@ int readPositiveInt(const std::string& prompt) {
     }
 }
 
+CalculationMethod readMethodChoice() {
+    char choice = '\0';
+    while (true) {
+        std::cout << "Choose final grade method - average (A) or median (M): ";
+        if (std::cin >> choice) {
+            choice = static_cast<char>(std::toupper(static_cast<unsigned char>(choice)));
+            if (choice == 'A') {
+                return CalculationMethod::Average;
+            }
+            if (choice == 'M') {
+                return CalculationMethod::Median;
+            }
+        }
+        std::cout << "Please enter A or M.\n";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+}
+
 int main() {
+    const CalculationMethod method = readMethodChoice();
     const int studentCount = readPositiveInt("How many students will you enter? ");
     std::vector<Person> students(studentCount);
 
     for (int i = 0; i < studentCount; ++i) {
-        std::cout << "\nEnter student " << (i + 1)
-                  << " data in format: Name Surname HW1 HW2 HW3 HW4 HW5 Exam\n> ";
+        std::cout << "\nEntering student " << (i + 1) << ":\n";
         std::cin >> students[i];
-        students[i].calculateFinalAverage();
+        students[i].calculateFinalGrade(method);
     }
+
+    const std::string methodTitle =
+        (method == CalculationMethod::Average) ? "Final_Point(Aver.)" : "Final_Point(Med.)";
 
     std::cout << "\n"
               << std::left << std::setw(12) << "Name" << std::setw(15) << "Surname" << std::right << std::setw(20)
-              << "Final_Point(Aver.)\n";
+              << methodTitle << '\n';
     std::cout << "-----------------------------------------------\n";
 
     for (const Person& student : students) {
