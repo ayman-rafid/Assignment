@@ -61,22 +61,6 @@ Compile from project root:
 
 ## Quick Example Input
 
-File-result path (`F`):
-
-```
-firstuser
-M
-1
-Ayan
-Khan
-8
-9
--1
-10
-F
-S
-```
-
 Interactive-result path (`I`):
 
 ```
