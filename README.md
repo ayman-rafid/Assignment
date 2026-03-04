@@ -1,6 +1,6 @@
-# Project101
+# Assignment
 
-Project101 is a C++ student grade calculator. It collects student name/surname,
+Assignment is a C++ student grade calculator. It collects student name/surname,
 homework scores, and exam score, then calculates final points using average or
 median logic.
 
@@ -30,8 +30,8 @@ After that, you can continue in:
 3. Open PowerShell and add g++ to current PATH:
    `$env:Path += ";C:\Users\Administrator\AppData\Local\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin"`
 4. Clone and open the project:
-   `git clone https://github.com/ayman-rafid/Project101.git`
-   `cd Project101`
+   `git clone https://github.com/ayman-rafid/Assignment.git`
+   `cd Assignment`
 5. Checkout assignment branch:
    `git checkout v0.1`
 
