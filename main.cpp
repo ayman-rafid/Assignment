@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -47,6 +49,8 @@ public:
 
     const std::string& firstName() const { return firstName_; }
     const std::string& surname() const { return surname_; }
+    const std::vector<int>& homework() const { return homework_; }
+    int examResult() const { return examResult_; }
     double finalGrade() const { return finalGrade_; }
     double finalByAverage() const { return 0.4 * homeworkAverage() + 0.6 * examResult_; }
     double finalByMedian() const { return 0.4 * homeworkMedian() + 0.6 * examResult_; }
@@ -266,6 +270,58 @@ std::vector<Person> loadStudentsFromFile(const std::string& fileName) {
     }
 
     return students;
+}
+
+std::string readUserTag() {
+    std::string userTag;
+    std::cout << "Enter user tag for this run (single word): ";
+    std::cin >> userTag;
+    return userTag;
+}
+
+std::string currentTimestamp() {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t timeNow = std::chrono::system_clock::to_time_t(now);
+    std::tm localTime{};
+#ifdef _WIN32
+    localtime_s(&localTime, &timeNow);
+#else
+    localtime_r(&timeNow, &localTime);
+#endif
+    std::ostringstream output;
+    output << std::put_time(&localTime, "%Y%m%d_%H%M%S");
+    return output.str();
+}
+
+std::string buildRunFileName(const std::string& userTag) {
+    return "Students_" + userTag + "_" + currentTimestamp() + ".txt";
+}
+
+bool saveStudentsToFile(const std::string& fileName, const std::vector<Person>& students) {
+    std::ofstream file(fileName);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    std::size_t maxHomeworkCount = 0;
+    for (const Person& student : students) {
+        maxHomeworkCount = std::max(maxHomeworkCount, student.homework().size());
+    }
+
+    file << "Name Surname";
+    for (std::size_t i = 0; i < maxHomeworkCount; ++i) {
+        file << " HW" << (i + 1);
+    }
+    file << " Exam\n";
+
+    for (const Person& student : students) {
+        file << student.firstName() << ' ' << student.surname();
+        for (int score : student.homework()) {
+            file << ' ' << score;
+        }
+        file << ' ' << student.examResult() << '\n';
+    }
+    return true;
 }
 
 void sortStudents(std::vector<Person>& students, SortField field) {
