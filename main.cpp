@@ -3,10 +3,12 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <random>
 #include <string>
 #include <vector>
 
 enum class CalculationMethod { Average, Median };
+enum class InputMode { Manual, Random };
 
 class Person {
 public:
@@ -134,6 +136,25 @@ int readPositiveInt(const std::string& prompt) {
     }
 }
 
+InputMode readInputMode() {
+    char choice = '\0';
+    while (true) {
+        std::cout << "Choose input mode - manual (M) or random (R): ";
+        if (std::cin >> choice) {
+            choice = static_cast<char>(std::toupper(static_cast<unsigned char>(choice)));
+            if (choice == 'M') {
+                return InputMode::Manual;
+            }
+            if (choice == 'R') {
+                return InputMode::Random;
+            }
+        }
+        std::cout << "Please enter M or R.\n";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+}
+
 CalculationMethod readMethodChoice() {
     char choice = '\0';
     while (true) {
@@ -153,14 +174,49 @@ CalculationMethod readMethodChoice() {
     }
 }
 
+Person createRandomPerson(std::mt19937& rng) {
+    std::string name;
+    std::string surname;
+
+    std::cout << "Name and surname: ";
+    std::cin >> name >> surname;
+
+    const int homeworkCount = readPositiveInt("How many homework scores to generate? ");
+
+    std::uniform_int_distribution<int> scoreDistribution(1, 10);
+    std::vector<int> homework(homeworkCount);
+    for (int& score : homework) {
+        score = scoreDistribution(rng);
+    }
+    const int exam = scoreDistribution(rng);
+
+    std::cout << "Generated homework: ";
+    for (std::size_t i = 0; i < homework.size(); ++i) {
+        std::cout << homework[i];
+        if (i + 1 < homework.size()) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "\nGenerated exam: " << exam << '\n';
+
+    return Person(name, surname, homework, exam);
+}
+
 int main() {
     const CalculationMethod method = readMethodChoice();
+    const InputMode inputMode = readInputMode();
     const int studentCount = readPositiveInt("How many students will you enter? ");
     std::vector<Person> students(studentCount);
+    std::random_device rd;
+    std::mt19937 rng(rd());
 
     for (int i = 0; i < studentCount; ++i) {
         std::cout << "\nEntering student " << (i + 1) << ":\n";
-        std::cin >> students[i];
+        if (inputMode == InputMode::Manual) {
+            std::cin >> students[i];
+        } else {
+            students[i] = createRandomPerson(rng);
+        }
         students[i].calculateFinalGrade(method);
     }
 
