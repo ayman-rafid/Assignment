@@ -1,6 +1,0 @@
-Name Surname HW1 HW2 HW3 HW4 HW5 Exam
-Aisha Rahman 8 9 10 6 10 9
-Nabil Hasan 7 10 8 5 4 6
-Farhan Karim 9 8 9 10 7 8
-Maliha Chowdhury 6 7 8 9 10 9
-Sajid Islam 10 9 9 8 9 10
