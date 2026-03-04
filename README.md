@@ -4,6 +4,8 @@ Assignment is a C++ student grade calculator. It collects student name/surname,
 homework scores, and exam score, then calculates final points using average or
 median logic.
 
+Repository: `ayman-rafid/Assignment`
+
 On every run, the app starts with interactive data entry and creates a new
 runtime file:
 
