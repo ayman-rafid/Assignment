@@ -45,19 +45,23 @@ Compile from project root:
 
 1. Run program:
    `.\grade_calc.exe`
-2. Enter run user tag (single word).
-3. Enter interactive data first (always required):
-   - choose input mode: `M` manual or `R` random
-   - enter number of students
-   - enter/generate scores
-4. Program generates a new file for this run:
-   - `Students_<userTag>_<timestamp>.txt`
-5. Choose next mode:
-   - `I`: choose `A` or `M` and print one final-point column
-   - `F`: load the file generated in this same run and print both Avg/Med columns
-6. Generated file remains on disk after the run.
+2. Prompt order during each run:
+   - Enter user tag (single word).
+   - Choose input mode: `M` (manual) or `R` (random).
+   - Enter number of students and provide/generate student data.
+   - Program creates: `Students_<userTag>_<timestamp>.txt`.
+   - Choose next mode: `I` (interactive result) or `F` (file result).
+3. If you choose `I` in the last step:
+   - Program asks grade method: `A` (average) or `M` (median).
+   - Prints one final-point column for entered students.
+4. If you choose `F` in the last step:
+   - Program asks sorting: `N` (name) or `S` (surname).
+   - Loads the file generated in this same run and prints both Avg/Med columns.
+5. Generated file remains on disk after execution.
 
 ## Quick Example Input
+
+File-result path (`F`):
 
 ```
 firstuser
@@ -71,4 +75,17 @@ Khan
 10
 F
 S
+```
+
+Interactive-result path (`I`):
+
+```
+firstuser
+R
+1
+Ayan
+Khan
+3
+I
+A
 ```
