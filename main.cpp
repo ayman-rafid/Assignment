@@ -1,14 +1,18 @@
 #include <algorithm>
 #include <cctype>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <random>
+#include <sstream>
 #include <string>
 #include <vector>
 
 enum class CalculationMethod { Average, Median };
 enum class InputMode { Manual, Random };
+enum class DataSource { Interactive, File };
+enum class SortField { Name, Surname };
 
 class Person {
 public:
@@ -38,13 +42,14 @@ public:
     ~Person() = default;
 
     void calculateFinalGrade(CalculationMethod method) {
-        const double homeworkComponent = (method == CalculationMethod::Average) ? homeworkAverage() : homeworkMedian();
-        finalGrade_ = 0.4 * homeworkComponent + 0.6 * examResult_;
+        finalGrade_ = (method == CalculationMethod::Average) ? finalByAverage() : finalByMedian();
     }
 
     const std::string& firstName() const { return firstName_; }
     const std::string& surname() const { return surname_; }
     double finalGrade() const { return finalGrade_; }
+    double finalByAverage() const { return 0.4 * homeworkAverage() + 0.6 * examResult_; }
+    double finalByMedian() const { return 0.4 * homeworkMedian() + 0.6 * examResult_; }
 
     friend std::istream& operator>>(std::istream& in, Person& person);
     friend std::ostream& operator<<(std::ostream& out, const Person& person);
@@ -54,6 +59,7 @@ private:
         if (homework_.empty()) {
             return 0.0;
         }
+
         double sum = 0.0;
         for (int score : homework_) {
             sum += score;
@@ -136,41 +142,62 @@ int readPositiveInt(const std::string& prompt) {
     }
 }
 
-InputMode readInputMode() {
+char readChoiceChar(const std::string& prompt) {
     char choice = '\0';
+    std::cout << prompt;
+    std::cin >> choice;
+    return static_cast<char>(std::toupper(static_cast<unsigned char>(choice)));
+}
+
+DataSource readDataSource() {
     while (true) {
-        std::cout << "Choose input mode - manual (M) or random (R): ";
-        if (std::cin >> choice) {
-            choice = static_cast<char>(std::toupper(static_cast<unsigned char>(choice)));
-            if (choice == 'M') {
-                return InputMode::Manual;
-            }
-            if (choice == 'R') {
-                return InputMode::Random;
-            }
+        const char choice = readChoiceChar("Choose data source - interactive (I) or file (F): ");
+        if (choice == 'I') {
+            return DataSource::Interactive;
+        }
+        if (choice == 'F') {
+            return DataSource::File;
+        }
+        std::cout << "Please enter I or F.\n";
+    }
+}
+
+InputMode readInputMode() {
+    while (true) {
+        const char choice = readChoiceChar("Choose input mode - manual (M) or random (R): ");
+        if (choice == 'M') {
+            return InputMode::Manual;
+        }
+        if (choice == 'R') {
+            return InputMode::Random;
         }
         std::cout << "Please enter M or R.\n";
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 }
 
 CalculationMethod readMethodChoice() {
-    char choice = '\0';
     while (true) {
-        std::cout << "Choose final grade method - average (A) or median (M): ";
-        if (std::cin >> choice) {
-            choice = static_cast<char>(std::toupper(static_cast<unsigned char>(choice)));
-            if (choice == 'A') {
-                return CalculationMethod::Average;
-            }
-            if (choice == 'M') {
-                return CalculationMethod::Median;
-            }
+        const char choice = readChoiceChar("Choose final grade method - average (A) or median (M): ");
+        if (choice == 'A') {
+            return CalculationMethod::Average;
+        }
+        if (choice == 'M') {
+            return CalculationMethod::Median;
         }
         std::cout << "Please enter A or M.\n";
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+}
+
+SortField readSortField() {
+    while (true) {
+        const char choice = readChoiceChar("Sort by name (N) or surname (S): ");
+        if (choice == 'N') {
+            return SortField::Name;
+        }
+        if (choice == 'S') {
+            return SortField::Surname;
+        }
+        std::cout << "Please enter N or S.\n";
     }
 }
 
@@ -182,7 +209,6 @@ Person createRandomPerson(std::mt19937& rng) {
     std::cin >> name >> surname;
 
     const int homeworkCount = readPositiveInt("How many homework scores to generate? ");
-
     std::uniform_int_distribution<int> scoreDistribution(1, 10);
     std::vector<int> homework(homeworkCount);
     for (int& score : homework) {
@@ -202,7 +228,105 @@ Person createRandomPerson(std::mt19937& rng) {
     return Person(name, surname, homework, exam);
 }
 
+std::vector<Person> loadStudentsFromFile(const std::string& fileName) {
+    std::ifstream file(fileName);
+    std::vector<Person> students;
+    if (!file.is_open()) {
+        std::cout << "Could not open file: " << fileName << '\n';
+        return students;
+    }
+
+    std::string line;
+    std::getline(file, line);
+
+    while (std::getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        }
+
+        std::istringstream row(line);
+        std::string name;
+        std::string surname;
+        if (!(row >> name >> surname)) {
+            continue;
+        }
+
+        std::vector<int> scores;
+        int score = 0;
+        while (row >> score) {
+            scores.push_back(score);
+        }
+        if (scores.size() < 2) {
+            continue;
+        }
+
+        const int exam = scores.back();
+        scores.pop_back();
+        students.emplace_back(name, surname, scores, exam);
+    }
+
+    return students;
+}
+
+void sortStudents(std::vector<Person>& students, SortField field) {
+    std::sort(students.begin(), students.end(), [field](const Person& a, const Person& b) {
+        if (field == SortField::Name) {
+            if (a.firstName() == b.firstName()) {
+                return a.surname() < b.surname();
+            }
+            return a.firstName() < b.firstName();
+        }
+        if (a.surname() == b.surname()) {
+            return a.firstName() < b.firstName();
+        }
+        return a.surname() < b.surname();
+    });
+}
+
+void printSingleMethodTable(const std::vector<Person>& students, CalculationMethod method) {
+    const std::string methodTitle =
+        (method == CalculationMethod::Average) ? "Final_Point(Aver.)" : "Final_Point(Med.)";
+
+    std::cout << "\n"
+              << std::left << std::setw(12) << "Name" << std::setw(15) << "Surname" << std::right << std::setw(20)
+              << methodTitle << '\n';
+    std::cout << "-----------------------------------------------\n";
+
+    for (const Person& student : students) {
+        std::cout << student << '\n';
+    }
+}
+
+void printAvgMedTable(const std::vector<Person>& students) {
+    std::cout << "\n"
+              << std::left << std::setw(12) << "Name" << std::setw(15) << "Surname" << std::right << std::setw(15)
+              << "Final (Avg.)"
+              << " | " << std::setw(12) << "Final (Med.)" << '\n';
+    std::cout << "--------------------------------------------------------------\n";
+
+    for (const Person& student : students) {
+        std::cout << std::left << std::setw(12) << student.firstName() << std::setw(15) << student.surname() << std::right
+                  << std::setw(15) << std::fixed << std::setprecision(2) << student.finalByAverage() << " | " << std::setw(12)
+                  << std::fixed << std::setprecision(2) << student.finalByMedian() << '\n';
+    }
+}
+
 int main() {
+    const DataSource source = readDataSource();
+
+    if (source == DataSource::File) {
+        std::vector<Person> students = loadStudentsFromFile("Students.txt");
+        if (students.empty()) {
+            std::cout << "No valid student records were loaded from Students.txt.\n";
+            return 1;
+        }
+
+        const SortField sortField = readSortField();
+        sortStudents(students, sortField);
+        printAvgMedTable(students);
+        return 0;
+    }
+
     const CalculationMethod method = readMethodChoice();
     const InputMode inputMode = readInputMode();
     const int studentCount = readPositiveInt("How many students will you enter? ");
@@ -220,17 +344,6 @@ int main() {
         students[i].calculateFinalGrade(method);
     }
 
-    const std::string methodTitle =
-        (method == CalculationMethod::Average) ? "Final_Point(Aver.)" : "Final_Point(Med.)";
-
-    std::cout << "\n"
-              << std::left << std::setw(12) << "Name" << std::setw(15) << "Surname" << std::right << std::setw(20)
-              << methodTitle << '\n';
-    std::cout << "-----------------------------------------------\n";
-
-    for (const Person& student : students) {
-        std::cout << student << '\n';
-    }
-
+    printSingleMethodTable(students, method);
     return 0;
 }
