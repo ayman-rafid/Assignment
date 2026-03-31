@@ -22,6 +22,25 @@ void sortStudents(std::vector<Person>& students, SortField field) {
               });
 }
 
+void splitStudents(const std::vector<Person>& all,
+                   std::vector<Person>& failed,
+                   std::vector<Person>& passed,
+                   CalculationMethod method) {
+    failed.clear();
+    passed.clear();
+
+    for (const Person& original : all) {
+        Person student = original;
+        student.calculateFinalGrade(method);
+
+        if (student.finalGrade() < 5.0) {
+            failed.push_back(student);
+        } else {
+            passed.push_back(student);
+        }
+    }
+}
+
 void printSingleMethodTable(const std::vector<Person>& students, CalculationMethod method) {
     const std::string methodTitle =
         (method == CalculationMethod::Average)

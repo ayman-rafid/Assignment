@@ -100,3 +100,38 @@ bool saveStudentsToFile(const std::string& fileName, const std::vector<Person>& 
 
     return true;
 }
+
+void writeStudentsToFile(const std::string& fileName,
+                         const std::vector<Person>& students,
+                         CalculationMethod method) {
+    std::filesystem::path path(fileName);
+    if (path.has_parent_path()) {
+        std::filesystem::create_directories(path.parent_path());
+    }
+
+    std::ofstream file(fileName);
+    if (!file.is_open()) {
+        throw FileOpenException("Could not create file: " + fileName);
+    }
+
+    const std::string title =
+        (method == CalculationMethod::Average) ? "Final (Avg.)" : "Final (Med.)";
+
+    file << std::left << std::setw(20) << "Name"
+         << std::setw(20) << "Surname"
+         << std::right << std::setw(15) << title << '\n';
+
+    file << std::string(55, '-') << '\n';
+
+    for (const Person& student : students) {
+        const double finalValue =
+            (method == CalculationMethod::Average)
+                ? student.finalByAverage()
+                : student.finalByMedian();
+
+        file << std::left << std::setw(20) << student.firstName()
+             << std::setw(20) << student.surname()
+             << std::right << std::setw(15) << std::fixed << std::setprecision(2)
+             << finalValue << '\n';
+    }
+}

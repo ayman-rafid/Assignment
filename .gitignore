@@ -1,2 +1,9 @@
 grade_calc.exe
 Students_*.txt
+
+# Generated local files
+grade_calc.exe
+Students.txt
+data/*.txt
+output/*.txt
+benchmark/*.txt

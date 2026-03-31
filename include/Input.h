@@ -9,6 +9,7 @@
 
 int readPositiveInt(const std::string& prompt);
 char readChoiceChar(const std::string& prompt);
+int readMainMenuChoice();
 
 DataSource readDataSource();
 InputMode readInputMode();

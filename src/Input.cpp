@@ -27,6 +27,24 @@ char readChoiceChar(const std::string& prompt) {
     return static_cast<char>(std::toupper(static_cast<unsigned char>(choice)));
 }
 
+int readMainMenuChoice() {
+    while (true) {
+        std::cout << "\n===== V0.2 MENU =====\n";
+        std::cout << "1. Interactive student input\n";
+        std::cout << "2. Read Students.txt and print Avg/Med table\n";
+        std::cout << "3. Generate benchmark data files\n";
+        std::cout << "4. Run vector benchmark\n";
+        std::cout << "5. Exit\n";
+
+        const int choice = readPositiveInt("Choose option (1-5): ");
+        if (choice >= 1 && choice <= 5) {
+            return choice;
+        }
+
+        std::cout << "Please choose a number from 1 to 5.\n";
+    }
+}
+
 DataSource readDataSource() {
     while (true) {
         const char choice = readChoiceChar("Choose next mode - interactive (I) or file (F): ");
