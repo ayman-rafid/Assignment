@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Benchmark.h"
+#include "ContainerBenchmark.h"
 #include "FileManager.h"
 #include "Generator.h"
 #include "Input.h"
@@ -51,6 +52,9 @@ int main() {
                 std::cout << "\nRunning vector benchmark...\n";
                 benchmarkAllFiles();
             } else if (choice == 5) {
+                std::cout << "\nRunning all container benchmarks...\n";
+                benchmarkAllContainers();
+            } else if (choice == 6) {
                 std::cout << "Goodbye!\n";
                 return 0;
             }

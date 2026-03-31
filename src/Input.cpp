@@ -29,19 +29,20 @@ char readChoiceChar(const std::string& prompt) {
 
 int readMainMenuChoice() {
     while (true) {
-        std::cout << "\n===== V0.2 MENU =====\n";
+        std::cout << "\n===== MENU =====\n";
         std::cout << "1. Interactive student input\n";
         std::cout << "2. Read Students.txt and print Avg/Med table\n";
         std::cout << "3. Generate benchmark data files\n";
         std::cout << "4. Run vector benchmark\n";
-        std::cout << "5. Exit\n";
+        std::cout << "5. Run vector + deque + list benchmarks\n";
+        std::cout << "6. Exit\n";
 
-        const int choice = readPositiveInt("Choose option (1-5): ");
-        if (choice >= 1 && choice <= 5) {
+        const int choice = readPositiveInt("Choose option (1-6): ");
+        if (choice >= 1 && choice <= 6) {
             return choice;
         }
 
-        std::cout << "Please choose a number from 1 to 5.\n";
+        std::cout << "Please choose a number from 1 to 6.\n";
     }
 }
 
