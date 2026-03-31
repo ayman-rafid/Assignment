@@ -387,22 +387,12 @@ void printAvgMedTable(const std::vector<Person>& students) {
 }
 
 int main() {
-    std::cout << "Initial setup: interactive data entry is required for every run.\n";
-    const std::string userTag = readUserTag();
-    std::vector<Person> generatedStudents = collectStudentsInteractive();
-    const std::string fileName = buildRunFileName(userTag);
-
-    if (!saveStudentsToFile(fileName, generatedStudents)) {
-        std::cout << "Could not create file: " << fileName << '\n';
-        return 1;
-    }
-
-    std::cout << "\nGenerated file: " << fileName << '\n';
-
     const DataSource source = readDataSource();
 
     if (source == DataSource::File) {
+        const std::string fileName = "Students.txt";
         std::vector<Person> students = loadStudentsFromFile(fileName);
+
         if (students.empty()) {
             std::cout << "No valid student records were loaded from " << fileName << ".\n";
             return 1;
@@ -414,11 +404,21 @@ int main() {
         return 0;
     }
 
+    std::vector<Person> students = collectStudentsInteractive();
+    const std::string fileName = "Students.txt";
+
+    if (!saveStudentsToFile(fileName, students)) {
+        std::cout << "Could not create file: " << fileName << '\n';
+        return 1;
+    }
+
+    std::cout << "\nSaved file: " << fileName << '\n';
+
     const CalculationMethod method = readMethodChoice();
-    for (Person& student : generatedStudents) {
+    for (Person& student : students) {
         student.calculateFinalGrade(method);
     }
 
-    printSingleMethodTable(generatedStudents, method);
+    printSingleMethodTable(students, method);
     return 0;
 }
