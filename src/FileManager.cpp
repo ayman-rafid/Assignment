@@ -1,25 +1,33 @@
 #include "FileManager.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
-#include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "Exceptions.h"
 
 std::vector<Person> loadStudentsFromFile(const std::string& fileName) {
     std::ifstream file(fileName);
     std::vector<Person> students;
 
     if (!file.is_open()) {
-        std::cout << "Could not open file: " << fileName << '\n';
-        return students;
+        throw FileOpenException("Could not open file: " + fileName);
     }
 
     std::string line;
-    std::getline(file, line);  // skip header
+    if (!std::getline(file, line)) {
+        throw ValidationException("File is empty: " + fileName);
+    }
+
+    int lineNumber = 1;
 
     while (std::getline(file, line)) {
+        ++lineNumber;
+
         if (line.empty()) {
             continue;
         }
@@ -30,18 +38,27 @@ std::vector<Person> loadStudentsFromFile(const std::string& fileName) {
         std::string surname;
 
         if (!(row >> name >> surname)) {
-            continue;
+            throw ValidationException("Invalid name/surname at line " + std::to_string(lineNumber));
         }
 
         std::vector<int> scores;
         int score = 0;
 
         while (row >> score) {
+            if (score < 1 || score > 10) {
+                throw ValidationException(
+                    "Score out of range at line " + std::to_string(lineNumber) +
+                    ". Allowed values are 1..10."
+                );
+            }
             scores.push_back(score);
         }
 
         if (scores.size() < 2) {
-            continue;
+            throw ValidationException(
+                "Not enough grade data at line " + std::to_string(lineNumber) +
+                ". Need at least one homework score and one exam score."
+            );
         }
 
         const int exam = scores.back();
