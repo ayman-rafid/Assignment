@@ -1,50 +1,52 @@
-# Assignment v0.2
+# Assignment v0.25
 
-This project is a C++ student grade calculator based on `std::vector`.
+This project is a C++ student grade calculator and benchmark project.
+
+## Containers used
+
+- `std::vector`
+- `std::deque`
+- `std::list`
 
 ## Features
 
-- `Person` class with:
-  - constructor
-  - copy constructor
-  - copy assignment operator
-  - destructor
-  - overloaded `>>`
-  - overloaded `<<`
-- final grade calculation using:
-  - average
-  - median
-- interactive student input
-- random homework and exam generation
-- reading student data from `Students.txt`
-- sorting by name or surname
-- exception handling for file and validation errors
-- generation of benchmark files:
+- refactored multi-file project (`include/` and `src/`)
+- `Person` class with rule-of-three members
+- final grade calculation using average or median
+- interactive input and random generation
+- reading from `Students.txt`
+- benchmark data generation for:
   - 1,000
   - 10,000
   - 100,000
   - 1,000,000
   - 10,000,000
 - splitting students into:
-  - passed (`>= 5.0`)
   - failed (`< 5.0`)
+  - passed (`>= 5.0`)
 - timing analysis for:
-  - file reading
-  - sorting
-  - splitting
-  - writing output files
+  - read
+  - sort
+  - split
+  - write
   - total runtime
-
-## Project Structure
-
-- `include/` - header files
-- `src/` - source files
-- `data/` - generated input files
-- `output/` - generated passed/failed files
-- `benchmark/` - benchmark result files
 
 ## Build
 
-Compile from project root:
-
+`bash`
 g++ -std=c++17 -O2 -Wall -Wextra -Iinclude src/*.cpp -o grade_calc.exe
+
+## Menu
+
+1. Interactive student input
+2. Read Students.txt and print Avg/Med table
+3. Generate benchmark data files
+4. Run vector benchmark
+5. Run vector + deque + list benchmarks
+6. Exit
+
+## Benchmark Reports
+
+- benchmark/vector_benchmark.txt
+- benchmark/all_containers_benchmark.txt
+
