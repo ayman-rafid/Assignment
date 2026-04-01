@@ -52,6 +52,13 @@ std::string extractSizeLabel(const std::string& fileName) {
     return digits.empty() ? "unknown" : digits;
 }
 
+std::string strategyToString(SplitStrategy strategy) {
+    if (strategy == SplitStrategy::Strategy1) {
+        return "Strategy 1";
+    }
+    return "Strategy 2";
+}
+
 template <typename Container>
 Container loadContainerFromFile(const std::string& fileName) {
     std::ifstream file(fileName);
@@ -76,7 +83,6 @@ Container loadContainerFromFile(const std::string& fileName) {
         }
 
         std::istringstream row(line);
-
         std::string name;
         std::string surname;
 
@@ -121,10 +127,7 @@ void calculateFinalGrades(Container& students, CalculationMethod method) {
 }
 
 template <typename Container>
-void splitContainer(const Container& all,
-                    Container& failed,
-                    Container& passed,
-                    CalculationMethod method) {
+void splitContainer(const Container& all, Container& failed, Container& passed, CalculationMethod method) {
     failed.clear();
     passed.clear();
 
@@ -134,16 +137,15 @@ void splitContainer(const Container& all,
 
         if (student.finalGrade() < 5.0) {
             failed.emplace_back(student);
-        } else {
+        }
+        else {
             passed.emplace_back(student);
         }
     }
 }
 
 template <typename Container>
-void writeContainerToFile(const std::string& fileName,
-                          const Container& students,
-                          CalculationMethod method) {
+void writeContainerToFile(const std::string& fileName, const Container& students, CalculationMethod method) {
     std::filesystem::path path(fileName);
     if (path.has_parent_path()) {
         std::filesystem::create_directories(path.parent_path());
@@ -154,8 +156,7 @@ void writeContainerToFile(const std::string& fileName,
         throw FileOpenException("Could not create file: " + fileName);
     }
 
-    const std::string title =
-        (method == CalculationMethod::Average) ? "Final (Avg.)" : "Final (Med.)";
+    const std::string title = (method == CalculationMethod::Average) ? "Final (Avg.)" : "Final (Med.)";
 
     file << std::left << std::setw(20) << "Name"
          << std::setw(20) << "Surname"
@@ -165,14 +166,11 @@ void writeContainerToFile(const std::string& fileName,
 
     for (const auto& student : students) {
         const double finalValue =
-            (method == CalculationMethod::Average)
-                ? student.finalByAverage()
-                : student.finalByMedian();
+            (method == CalculationMethod::Average) ? student.finalByAverage() : student.finalByMedian();
 
         file << std::left << std::setw(20) << student.firstName()
              << std::setw(20) << student.surname()
-             << std::right << std::setw(15) << std::fixed << std::setprecision(2)
-             << finalValue << '\n';
+             << std::right << std::setw(15) << std::fixed << std::setprecision(2) << finalValue << '\n';
     }
 }
 
@@ -258,9 +256,7 @@ BenchmarkResult benchmarkListFile(const std::string& fileName) {
     };
 }
 
-void writeRow(std::ostream& out,
-              const std::string& containerName,
-              const BenchmarkResult& result) {
+void writeRow(std::ostream& out, const std::string& containerName, const BenchmarkResult& result) {
     out << std::left << std::setw(10) << containerName
         << std::setw(24) << result.fileName
         << std::right << std::setw(12) << std::fixed << std::setprecision(2) << result.readMs
@@ -271,13 +267,15 @@ void writeRow(std::ostream& out,
 }
 }
 
-void benchmarkAllContainers() {
+void benchmarkAllContainers(SplitStrategy strategy) {
     std::filesystem::create_directories("benchmark");
 
     std::ofstream report("benchmark/all_containers_benchmark.txt");
     if (!report.is_open()) {
         throw FileOpenException("Could not create benchmark/all_containers_benchmark.txt");
     }
+
+    report << "Selected split strategy: " << strategyToString(strategy) << "\n\n";
 
     report << std::left << std::setw(10) << "Container"
            << std::setw(24) << "File"
@@ -289,7 +287,8 @@ void benchmarkAllContainers() {
 
     report << std::string(94, '-') << '\n';
 
-    std::cout << '\n';
+    std::cout << "\nSelected split strategy: " << strategyToString(strategy) << "\n\n";
+
     std::cout << std::left << std::setw(10) << "Container"
               << std::setw(24) << "File"
               << std::right << std::setw(12) << "Read(ms)"
