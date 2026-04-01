@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <list>
 #include <sstream>
 #include <string>
@@ -57,6 +58,22 @@ std::string strategyToString(SplitStrategy strategy) {
         return "Strategy 1";
     }
     return "Strategy 2";
+}
+
+std::string strategyFileTag(SplitStrategy strategy) {
+    if (strategy == SplitStrategy::Strategy1) {
+        return "s1";
+    }
+    return "s2";
+}
+
+std::string buildOutputFileName(
+    const std::string& containerName,
+    const std::string& groupName,
+    const std::string& sizeLabel,
+    SplitStrategy strategy
+) {
+    return "output/" + containerName + "_" + strategyFileTag(strategy) + "_" + groupName + "_" + sizeLabel + ".txt";
 }
 
 template <typename Container>
@@ -126,15 +143,32 @@ void calculateFinalGrades(Container& students, CalculationMethod method) {
     }
 }
 
+void sortContainer(std::vector<Person>& students) {
+    std::sort(students.begin(), students.end(), compareBySurname);
+}
+
+void sortContainer(std::deque<Person>& students) {
+    std::sort(students.begin(), students.end(), compareBySurname);
+}
+
+void sortContainer(std::list<Person>& students) {
+    students.sort(compareBySurname);
+}
+
+void shrinkContainer(std::vector<Person>& students) {
+    students.shrink_to_fit();
+}
+
+void shrinkContainer(std::deque<Person>& students) {
+    students.shrink_to_fit();
+}
+
 template <typename Container>
-void splitContainer(const Container& all, Container& failed, Container& passed, CalculationMethod method) {
+void splitStrategy1(const Container& students, Container& failed, Container& passed) {
     failed.clear();
     passed.clear();
 
-    for (const auto& original : all) {
-        Person student = original;
-        student.calculateFinalGrade(method);
-
+    for (const auto& student : students) {
         if (student.finalGrade() < 5.0) {
             failed.emplace_back(student);
         }
@@ -142,6 +176,52 @@ void splitContainer(const Container& all, Container& failed, Container& passed, 
             passed.emplace_back(student);
         }
     }
+}
+
+void splitStrategy2(std::vector<Person>& students, std::vector<Person>& failed) {
+    failed.clear();
+
+    auto boundary = std::stable_partition(
+        students.begin(),
+        students.end(),
+        [](const Person& student) {
+            return student.finalGrade() >= 5.0;
+        }
+    );
+
+    std::copy(boundary, students.end(), std::back_inserter(failed));
+    students.erase(boundary, students.end());
+    shrinkContainer(students);
+}
+
+void splitStrategy2(std::deque<Person>& students, std::deque<Person>& failed) {
+    failed.clear();
+
+    auto boundary = std::stable_partition(
+        students.begin(),
+        students.end(),
+        [](const Person& student) {
+            return student.finalGrade() >= 5.0;
+        }
+    );
+
+    std::copy(boundary, students.end(), std::back_inserter(failed));
+    students.erase(boundary, students.end());
+    shrinkContainer(students);
+}
+
+void splitStrategy2(std::list<Person>& students, std::list<Person>& failed) {
+    failed.clear();
+
+    auto boundary = std::stable_partition(
+        students.begin(),
+        students.end(),
+        [](const Person& student) {
+            return student.finalGrade() >= 5.0;
+        }
+    );
+
+    failed.splice(failed.end(), students, boundary, students.end());
 }
 
 template <typename Container>
@@ -174,74 +254,49 @@ void writeContainerToFile(const std::string& fileName, const Container& students
     }
 }
 
-BenchmarkResult benchmarkDequeFile(const std::string& fileName) {
+template <typename Container>
+BenchmarkResult benchmarkContainerFile(
+    const std::string& fileName,
+    const std::string& containerName,
+    SplitStrategy strategy
+) {
     const auto totalStart = Clock::now();
 
     const auto readStart = Clock::now();
-    std::deque<Person> students = loadContainerFromFile<std::deque<Person>>(fileName);
+    Container students = loadContainerFromFile<Container>(fileName);
     const auto readEnd = Clock::now();
 
     calculateFinalGrades(students, CalculationMethod::Average);
 
     const auto sortStart = Clock::now();
-    std::sort(students.begin(), students.end(), compareBySurname);
+    sortContainer(students);
     const auto sortEnd = Clock::now();
 
-    std::deque<Person> failed;
-    std::deque<Person> passed;
+    Container failed;
+    Container passed;
 
     const auto splitStart = Clock::now();
-    splitContainer(students, failed, passed, CalculationMethod::Average);
+    if (strategy == SplitStrategy::Strategy1) {
+        splitStrategy1(students, failed, passed);
+    }
+    else {
+        splitStrategy2(students, failed);
+    }
     const auto splitEnd = Clock::now();
 
     const std::string sizeLabel = extractSizeLabel(fileName);
-    const std::string failedFile = "output/deque_failed_" + sizeLabel + ".txt";
-    const std::string passedFile = "output/deque_passed_" + sizeLabel + ".txt";
+    const std::string failedFile = buildOutputFileName(containerName, "failed", sizeLabel, strategy);
+    const std::string passedFile = buildOutputFileName(containerName, "passed", sizeLabel, strategy);
 
     const auto writeStart = Clock::now();
-    writeContainerToFile(failedFile, failed, CalculationMethod::Average);
-    writeContainerToFile(passedFile, passed, CalculationMethod::Average);
-    const auto writeEnd = Clock::now();
-
-    const auto totalEnd = Clock::now();
-
-    return {
-        fileName,
-        toMilliseconds(readEnd - readStart),
-        toMilliseconds(sortEnd - sortStart),
-        toMilliseconds(splitEnd - splitStart),
-        toMilliseconds(writeEnd - writeStart),
-        toMilliseconds(totalEnd - totalStart)
-    };
-}
-
-BenchmarkResult benchmarkListFile(const std::string& fileName) {
-    const auto totalStart = Clock::now();
-
-    const auto readStart = Clock::now();
-    std::list<Person> students = loadContainerFromFile<std::list<Person>>(fileName);
-    const auto readEnd = Clock::now();
-
-    calculateFinalGrades(students, CalculationMethod::Average);
-
-    const auto sortStart = Clock::now();
-    students.sort(compareBySurname);
-    const auto sortEnd = Clock::now();
-
-    std::list<Person> failed;
-    std::list<Person> passed;
-
-    const auto splitStart = Clock::now();
-    splitContainer(students, failed, passed, CalculationMethod::Average);
-    const auto splitEnd = Clock::now();
-
-    const std::string sizeLabel = extractSizeLabel(fileName);
-    const std::string failedFile = "output/list_failed_" + sizeLabel + ".txt";
-    const std::string passedFile = "output/list_passed_" + sizeLabel + ".txt";
-
-    const auto writeStart = Clock::now();
-    writeContainerToFile(failedFile, failed, CalculationMethod::Average);
-    writeContainerToFile(passedFile, passed, CalculationMethod::Average);
+    if (strategy == SplitStrategy::Strategy1) {
+        writeContainerToFile(failedFile, failed, CalculationMethod::Average);
+        writeContainerToFile(passedFile, passed, CalculationMethod::Average);
+    }
+    else {
+        writeContainerToFile(failedFile, failed, CalculationMethod::Average);
+        writeContainerToFile(passedFile, students, CalculationMethod::Average);
+    }
     const auto writeEnd = Clock::now();
 
     const auto totalEnd = Clock::now();
@@ -300,9 +355,12 @@ void benchmarkAllContainers(SplitStrategy strategy) {
     std::cout << std::string(94, '-') << '\n';
 
     for (const std::string& fileName : benchmarkFiles()) {
-        BenchmarkResult vectorResult = benchmarkOneFile(fileName);
-        BenchmarkResult dequeResult = benchmarkDequeFile(fileName);
-        BenchmarkResult listResult = benchmarkListFile(fileName);
+        BenchmarkResult vectorResult =
+            benchmarkContainerFile<std::vector<Person>>(fileName, "vector", strategy);
+        BenchmarkResult dequeResult =
+            benchmarkContainerFile<std::deque<Person>>(fileName, "deque", strategy);
+        BenchmarkResult listResult =
+            benchmarkContainerFile<std::list<Person>>(fileName, "list", strategy);
 
         writeRow(report, "vector", vectorResult);
         writeRow(report, "deque", dequeResult);
