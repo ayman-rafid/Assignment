@@ -92,6 +92,48 @@ Run on Windows:
 ./build/grade_calc.exe
 ```
 
+### Build the Windows Forms GUI (Windows)
+The assignment GUI is implemented as a separate C++/CLI Windows Forms executable.
+It keeps the original console project intact and reuses the same student parsing,
+sorting, and grade calculation code.
+
+Build:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-winforms.ps1
+```
+
+Run:
+```powershell
+.\dist\GradeCalcWinForms.exe
+```
+
+The GUI provides:
+- File menu for opening student data with `OpenFileDialog`
+- File menu for saving student data and result files with `SaveFileDialog`
+- Calculation menu for average, median, both-result table, and sorting
+- Help menu with About information
+- Exit menu item for closing the program
+
+Installer configuration is provided in `installer/GradeCalcWinForms.iss`.
+It uses creator `Ayman Rafid`, organization path `VVK`, and default install
+directory:
+
+```text
+C:\Program Files\VVK\Ayman_Rafid\
+```
+
+To create the installer, build the GUI first, then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-installer.ps1
+```
+
+The installer output is written to:
+
+```text
+dist\StudentGradeCalculatorSetup.exe
+```
+
 ## Application Usage
 
 1. Build the project.

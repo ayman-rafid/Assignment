@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <istream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -12,20 +13,25 @@
 
 std::vector<Person> loadStudentsFromFile(const std::string& fileName) {
     std::ifstream file(fileName);
-    std::vector<Person> students;
 
     if (!file.is_open()) {
         throw FileOpenException("Could not open file: " + fileName);
     }
 
+    return loadStudentsFromStream(file, fileName);
+}
+
+std::vector<Person> loadStudentsFromStream(std::istream& input, const std::string& sourceName) {
+    std::vector<Person> students;
+
     std::string line;
-    if (!std::getline(file, line)) {
-        throw ValidationException("File is empty: " + fileName);
+    if (!std::getline(input, line)) {
+        throw ValidationException("File is empty: " + sourceName);
     }
 
     int lineNumber = 1;
 
-    while (std::getline(file, line)) {
+    while (std::getline(input, line)) {
         ++lineNumber;
 
         if (line.empty()) {
@@ -77,28 +83,31 @@ bool saveStudentsToFile(const std::string& fileName, const std::vector<Person>& 
         return false;
     }
 
+    saveStudentsToStream(file, students);
+    return true;
+}
+
+void saveStudentsToStream(std::ostream& output, const std::vector<Person>& students) {
     std::size_t maxHomeworkCount = 0;
     for (const Person& student : students) {
         maxHomeworkCount = std::max(maxHomeworkCount, student.homework().size());
     }
 
-    file << "Name Surname";
+    output << "Name Surname";
     for (std::size_t i = 0; i < maxHomeworkCount; ++i) {
-        file << " HW" << (i + 1);
+        output << " HW" << (i + 1);
     }
-    file << " Exam\n";
+    output << " Exam\n";
 
     for (const Person& student : students) {
-        file << student.firstName() << ' ' << student.surname();
+        output << student.firstName() << ' ' << student.surname();
 
         for (int score : student.homework()) {
-            file << ' ' << score;
+            output << ' ' << score;
         }
 
-        file << ' ' << student.examResult() << '\n';
+        output << ' ' << student.examResult() << '\n';
     }
-
-    return true;
 }
 
 void writeStudentsToFile(const std::string& fileName,

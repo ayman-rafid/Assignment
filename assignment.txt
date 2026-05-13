@@ -1,0 +1,10 @@
+Enhance your created SD1 
+Create a graphical user interface for Yours application SD1 version 1.0
+A Windows Form object that should contain:
+A menu for saving data in the program to a file
+A menu for reading from a file and choosing the result file.
+A menu about the program and its closure.
+If encryption and decryption of input files are used in the program, key input should be provided in the program menu.
+For easier data reading and display, use a TextBox object, or choose its equivalent. Use the OpenFileDialog() and SaveFileDialog() methods for file selection.
+Create an installer for the final project, in its settings write the creator - Your_name and Your_surname, and the organization as VVK. These details should be used for the installation of your program on the user's computer (c://Program files//VVK//Name_Surname/*.exe).
+Publish the final project on your GitHub repository as a new project.
