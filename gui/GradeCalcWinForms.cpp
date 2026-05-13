@@ -29,6 +29,38 @@ std::string fromManagedString(String^ value) {
 String^ toManagedString(const std::string& value) {
     return gcnew String(value.c_str());
 }
+
+std::string toWindowsLineEndings(const std::string& value) {
+    std::string normalized;
+    normalized.reserve(value.size() + 16);
+
+    for (std::size_t i = 0; i < value.size(); ++i) {
+        if (value[i] == '\r') {
+            normalized.push_back('\r');
+            if (i + 1 < value.size() && value[i + 1] == '\n') {
+                normalized.push_back('\n');
+                ++i;
+            } else {
+                normalized.push_back('\n');
+            }
+        } else if (value[i] == '\n') {
+            normalized.push_back('\r');
+            normalized.push_back('\n');
+        } else {
+            normalized.push_back(value[i]);
+        }
+    }
+
+    return normalized;
+}
+
+String^ toWindowsText(const std::string& value) {
+    return toManagedString(toWindowsLineEndings(value));
+}
+
+String^ toWindowsText(String^ value) {
+    return toWindowsText(fromManagedString(value));
+}
 }
 
 public ref class GradeCalcForm : public Form {
@@ -175,7 +207,7 @@ private:
                 student.calculateFinalGrade(method);
             }
 
-            resultTextBox_->Text = toManagedString(formatSingleMethodTable(students, method));
+            resultTextBox_->Text = toWindowsText(formatSingleMethodTable(students, method));
             statusLabel_->Text = method == CalculationMethod::Average
                 ? "Calculated final grades by average"
                 : "Calculated final grades by median";
@@ -196,7 +228,7 @@ private:
     void calculateBoth(Object^, EventArgs^) {
         try {
             std::vector<Person> students = readStudentsFromInput();
-            resultTextBox_->Text = toManagedString(formatAvgMedTable(students));
+            resultTextBox_->Text = toWindowsText(formatAvgMedTable(students));
             statusLabel_->Text = "Calculated average and median table";
         }
         catch (const std::exception& ex) {
@@ -250,7 +282,7 @@ private:
             std::vector<Person> students = readStudentsFromInput();
             std::ostringstream output;
             saveStudentsToStream(output, students);
-            File::WriteAllText(dialog->FileName, toManagedString(output.str()));
+            File::WriteAllText(dialog->FileName, toWindowsText(output.str()));
             statusLabel_->Text = "Saved student data";
         }
         catch (const std::exception& ex) {
@@ -281,7 +313,7 @@ private:
         }
 
         try {
-            File::WriteAllText(dialog->FileName, resultTextBox_->Text);
+            File::WriteAllText(dialog->FileName, toWindowsText(resultTextBox_->Text));
             statusLabel_->Text = "Saved result file";
         }
         catch (Exception^ ex) {
